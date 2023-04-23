@@ -1,12 +1,22 @@
-FROM webdevops/php-nginx:8.2-alpine
-ENV WEB_DOCUMENT_ROOT=/app/public
-ENV PHP_DISMOD=bz2,calendar,exiif,ffi,intl,gettext,ldap,mysqli,imap,pdo_pgsql,pgsql,soap,sockets,sysvmsg,sysvsm,sysvshm,shmop,xsl,zip,gd,apcu,vips,yaml,imagick,mongodb,amqp
-WORKDIR /app
-ENV COMPOSER_ALLOW_SUPERUSER=1
-COPY composer.json composer.lock
-RUN composer install --no-interaction --optimize-autoloader --no-dev
-COPY . .
-RUN php artisan optimize
-RUN php artisan horizon:publish
-# Ensure all of our files are owned by the same user and group.
-RUN chown -R application:application .
+FROM composer:latest as build
+COPY . /app/
+RUN composer install --prefer-dist --no-dev --optimize-autoloader --no-interaction
+
+FROM php:8.1-apache-buster as production
+
+ENV APP_ENV=production
+ENV APP_DEBUG=false
+
+RUN docker-php-ext-configure opcache --enable-opcache && \
+  docker-php-ext-install pdo pdo_mysql
+COPY docker/php/conf.d/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
+
+COPY --from=build /app /var/www/html
+COPY docker/000-default.conf /etc/apache2/sites-available/000-default.conf
+COPY .env.prod /var/www/html/.env
+
+RUN php artisan config:cache && \
+  php artisan route:cache && \
+  chmod 777 -R /var/www/html/storage/ && \
+  chown -R www-data:www-data /var/www/ && \
+  a2enmod rewrite
