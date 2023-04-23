@@ -12,15 +12,6 @@ services:
             - "8000:80"
         networks:
             - sail
-    # redis:
-    #     image: redis:6
-    #     volumes:
-    #         - 'data.redis:/data'
-    #     networks:
-    #         - app
-    #     healthcheck:
-    #     test: [ "CMD", "redis-cli", "ping" ]
-
     mysql:
         image: 'mysql/mysql-server:8.0'
         ports:
@@ -60,21 +51,6 @@ services:
                 - ping
             retries: 3
             timeout: 5s
-    # mailpit:
-    #     image: 'axllent/mailpit:latest'
-    #     ports:
-    #         - '${FORWARD_MAILPIT_PORT:-1025}:1025'
-    #         - '${FORWARD_MAILPIT_DASHBOARD_PORT:-8025}:8025'
-    #     networks:
-    #         - sail
-    # selenium:
-    #     image: selenium/standalone-chrome
-    #     extra_hosts:
-    #         - 'host.docker.internal:host-gateway'
-    #     volumes:
-    #         - '/dev/shm:/dev/shm'
-    #     networks:
-    #         - sail
 networks:
     sail:
         driver: bridge
@@ -83,5 +59,3 @@ volumes:
         driver: local
     sail-redis:
         driver: local
-    # sail-meilisearch:
-    #     driver: local
